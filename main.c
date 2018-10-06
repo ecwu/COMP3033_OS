@@ -1,7 +1,11 @@
+/*
+ * This is a simple version of command prompt by reading users command
+ * and try to execute the command using child process. The program is
+ * written and tested in macOS 10.14 (Kernel Version: Darwin 18.0.0)
+ */
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
-#include <stdlib.h>
 
 #define SIZE 1024
 
@@ -22,13 +26,15 @@ int main(void) {
                 break;
             }
         }
-        if (strcmp(buf, "exit") == 0){
+
+        if (strcmp(buf, "exit") == 0) {
             // if user input "exit", terminate the loop
             char exit_info[] = "Exiting..\n";
             write(1, exit_info, strlen(exit_info));
             return 0;
         }
-        // create child process
+
+        // create a child process same as parent
         child_pid = fork();
         if (child_pid < 0) {
             char error_info[] = "Parent: fork failed\n";
@@ -39,6 +45,8 @@ int main(void) {
             char child_running_info[] = "Child: now running same program as parent, doing exec\n";
             write(1, child_running_info, strlen(child_running_info));
             // Child process run the user command
+            // Execlp begin with the argument point the filename which to be execute,
+            // and follow with many arguments. MUST be terminated by a NULL pointer.
             execlp(buf, buf, NULL);
             char error_info[] = "Child: exec failed, die\n";
             write(1, error_info, strlen(error_info));
@@ -48,6 +56,8 @@ int main(void) {
             char wait_info[] = "Parent: now sleeping waiting for child to end\n";
             write(1, wait_info, strlen(wait_info));
             // wait for child to end
+            // wait will suspends until one of its children terminates
+            // if wait not performed, then the child remains in a "zombie" state
             wait(&status);
             char finish_info[] = "Parent: Finish wait for child, child is dead\n";
             write(1, finish_info, strlen(finish_info));
