@@ -76,6 +76,9 @@ int main() {
             }
             if (FinishedInPeriod == NumOfProcesses) {
                 operate = 0;
+                if (nextProcess != -1){ // no process before idle
+                    operate = 3;
+                }
                 // IF nextProcess == -1; all remaining time == 0 TODO: is nextProcess == -1 necessary?
             }
 
@@ -94,9 +97,15 @@ int main() {
         switch (operate) {
             case 0:
                 i++; // CPU IDLE
+                // printf("IDLE\n"); // TODO: DELETE LATER
                 break;
             case 1:
                 nextProcess = 0; // Pick One
+                for (int l = 0; l < NumOfProcesses; ++l) {
+                    if (ProcessInfoArray[l].remaining_time != 0) {
+                        nextProcess = l;
+                    }
+                }
                 for (int j = 0; j < NumOfProcesses; j++) {
                     /*printf("process %d deadline remaining time: %d\n", j + 1,
                            ProcessInfoArray[j].period - i % ProcessInfoArray[j].period);*/
@@ -104,11 +113,9 @@ int main() {
                     // Pick the next running process
                     if (ProcessInfoArray[j].remaining_time > 0) {
                         if (ProcessInfoArray[j].period -
-                            i % ProcessInfoArray[j].period -
-                            ProcessInfoArray[j].remaining_time <
+                            i % ProcessInfoArray[j].period<
                             ProcessInfoArray[nextProcess].period -
-                            i % ProcessInfoArray[nextProcess].period -
-                            ProcessInfoArray[nextProcess].remaining_time) {
+                            i % ProcessInfoArray[nextProcess].period) {
                             nextProcess = j;
                         }
                     }
@@ -116,9 +123,12 @@ int main() {
                 printf("%d: process %d starts\n", i, nextProcess+1); // Print the start message
                 break;
             case 2:
-                printf("%d: Process%d running\n", i, nextProcess); // Print Runing status, TODO: DELETE LATER
+                // printf("%d: Process%d running\n", i, nextProcess+1); // Print Runing status, TODO: DELETE LATER
                 i++;
                 ProcessInfoArray[nextProcess].remaining_time -= 1;
+                if(ProcessInfoArray[nextProcess].remaining_time == 0){
+
+                }
                 break;
             case 3:
                 printf("%d: process %d end\n", i, nextProcess+1); // Print the end message
@@ -126,33 +136,55 @@ int main() {
                 break;
             case 4: // Meet Period
                 // Update remaining time
-                printf("UPDATE REMAINING TIME");
+                // printf("UPDATE REMAINING TIME"); TODO: DELETE LATER
                 for(int j = 0; j < NumOfProcesses; j++){
                     if (i % ProcessInfoArray[j].period == 0){
                         ProcessInfoArray[j].remaining_time += ProcessInfoArray[j].burst_time;
                     }
                 }
-                for (int k = 0; k < NumOfProcesses; ++k) {
-                    printf("P%d remaining Time: %d\n", k+1, ProcessInfoArray[k].remaining_time);
-                }
-                if (0){
-                    // TODO: CHECK IF PREEMPT IS NEEDED
-                    // DO THE EARLIEST DEADLINE CHECK
+//                for (int k = 0; k < NumOfProcesses; ++k) {
+//                    printf("! %d: P%d remaining Time: %d\n", i, k+1, ProcessInfoArray[k].remaining_time);
+//                    printf("%d\n", ProcessInfoArray[k].period - i % ProcessInfoArray[k].period);
+//                }
+                // TODO: DELETE LATER
+                if (nextProcess != -1){
+                    int urgentProcess = nextProcess;
+
                     for (int j = 0; j < NumOfProcesses; j++) {
-                        // Pick the next running process
+                        // Pick the a more urgent process
                         if (ProcessInfoArray[j].remaining_time > 0) {
                             if (ProcessInfoArray[j].period -
-                                i % ProcessInfoArray[j].period -
-                                ProcessInfoArray[j].remaining_time <
+                                i % ProcessInfoArray[j].period <
                                 ProcessInfoArray[nextProcess].period -
-                                i % ProcessInfoArray[nextProcess].period -
-                                ProcessInfoArray[nextProcess].remaining_time) {
-                                nextProcess = j;
-                                printf("PREEMPT: %d\n", nextProcess);  // FIXME: FOR DEBUG
+                                i % ProcessInfoArray[nextProcess].period) {
+                                urgentProcess = j;
                             }
                         }
                     }
+
+
+                    int maxRemainingTimeProcess = -1;
+                    for (int j = 0; j < nextProcess; ++j) {
+                        if(ProcessInfoArray[nextProcess].remaining_time < ProcessInfoArray[j].remaining_time){
+                            if (ProcessInfoArray[j].period -
+                            i % ProcessInfoArray[j].period ==
+                            ProcessInfoArray[nextProcess].period -
+                            i % ProcessInfoArray[nextProcess].period)
+                            maxRemainingTimeProcess = j;
+                        }
+                    }
+
+                    if (maxRemainingTimeProcess != -1){
+                        urgentProcess = maxRemainingTimeProcess;
+                    }
+
+                    if (urgentProcess != nextProcess && ProcessInfoArray[urgentProcess].remaining_time != 0){
+                        printf("%d: process %d preempted!\n", i, nextProcess+1);  // Preempted Message
+                        nextProcess = urgentProcess;
+                        printf("%d: process %d starts\n", i, nextProcess+1); // Print the start message
+                    }
                 }
+
                 break;
             case 5:
                 // TODO: DELETE?
