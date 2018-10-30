@@ -160,7 +160,8 @@ int main() {
 
                 for (int j = 0; j < NumOfProcesses; j++) {
                     if (i % ProcessInfoArray[j].period == 0) {
-                        ProcessInfoArray[j].remaining_time += ProcessInfoArray[j].burst_time; // add burst time to every process that meet it's period
+                        ProcessInfoArray[j].remaining_time += ProcessInfoArray[j].burst_time;
+                        // add burst time to every process that meet it's period
                     }
                 }
                 if (nextProcess != -1) {
