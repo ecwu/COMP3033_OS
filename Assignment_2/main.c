@@ -37,15 +37,16 @@ int main() {
         scanf("%d", &ProcessInfoArray[i].burst_time);
         printf("Enter the period of process %d: ", i + 1);
         scanf("%d", &ProcessInfoArray[i].period);
-        ProcessInfoArray[i].remaining_time = 0;
+        ProcessInfoArray[i].remaining_time = 0; // Init the remaining time
     }
 
     // MaxTime is the Least Common Multiple of all the periods
     MaxTime = lcm(ProcessInfoArray, NumOfProcesses);
-    int nextProcess = -1;
-    for (int i = 0; i < MaxTime;) {
+    int nextProcess = -1; // Indicate which process currently are running
 
-        /*
+    for (int i = 0; i < MaxTime;) {
+        /* Switch to different operation according to the current status
+         *
          * Operate list:
          * 0 - CPU Idle
          * 1 - Process Choosing
@@ -59,7 +60,7 @@ int main() {
 
         for (int k = 0; k < NumOfProcesses ; k++) {
             if (ProcessInfoArray[k].remaining_time == 0 && i % ProcessInfoArray[k].period == 0){
-                operate = 4;
+                operate = 4; // If meet a period's start
                 break;
             }
             if (i > 0){ // When a process is overdue
@@ -67,20 +68,22 @@ int main() {
                 ProcessInfoArray[k].remaining_time < ProcessInfoArray[k].burst_time &&
                 i % ProcessInfoArray[k].period == 0
                 ){
-                    operate = 5;
+                    operate = 5; // If meet a period's start and also some process's remaining time is greater than 0
                     break;
                 }
             }
         }
 
 
-        if (operate < 4){
-            if(nextProcess == -1){ // Pick next process
-                operate = 1;
-            } else if (ProcessInfoArray[nextProcess].remaining_time > 0){ // Running the Process
-                operate = 2;
-            } else if (ProcessInfoArray[nextProcess].remaining_time == 0){ // Finish a Process
-                operate = 3;
+        if (operate < 4){ // If the status is non of them above
+            if(nextProcess == -1){ // If currently don't have process
+                operate = 1; // Pick next process
+            } else if (ProcessInfoArray[nextProcess].remaining_time > 0){
+                // If a process is running and remaining_time greater than 0 (still running)
+                operate = 2; // Running the Process
+            } else if (ProcessInfoArray[nextProcess].remaining_time == 0){
+                // If the remaining_time go to 0 (finished running)
+                operate = 3; // Finish a Process
             }
 
             int FinishedInPeriod = 0; // Number Of the Process finished within the period
@@ -90,7 +93,7 @@ int main() {
                 }
             }
             if (FinishedInPeriod == NumOfProcesses) {
-                operate = 0;
+                operate = 0; // idle the cpu
                 if (nextProcess != -1){ // no process before idle
                     operate = 3;
                 }
@@ -100,19 +103,16 @@ int main() {
         switch (operate) {
             case 0:
                 i++; // CPU IDLE
-                // printf("IDLE\n"); // FIXME: DELETE LATER
                 break;
             case 1:
                 nextProcess = 0; // Pick One
                 for (int l = 0; l < NumOfProcesses; l++) {
+                    // The a process which its remaining_time is not equal to 0 (non finished)
                     if (ProcessInfoArray[l].remaining_time != 0) {
                         nextProcess = l;
                     }
                 }
-                for (int j = 0; j < NumOfProcesses; j++) {
-                    /*printf("process %d deadline remaining time: %d\n", j + 1,
-                           ProcessInfoArray[j].period - i % ProcessInfoArray[j].period);*/
-
+                for (int j = 0; j < NumOfProcesses; j++) { // Find the Earliest Deadline Process
                     // Pick the next running process
                     if (ProcessInfoArray[j].remaining_time > 0) {
                         if (ProcessInfoArray[j].period -
@@ -126,11 +126,11 @@ int main() {
                 printf("%d: process %d starts\n", i, nextProcess+1); // Print the start message
                 break;
             case 2:
-                // printf("%d: Process%d running\n", i, nextProcess+1); // Print Runing status, FIXME: DELETE LATER
-                i++;
-                ProcessInfoArray[nextProcess].remaining_time -= 1;
+                i++; // increase total running time
+                ProcessInfoArray[nextProcess].remaining_time -= 1; // minus the remaining_time
                 for (int k = 0; k < NumOfProcesses; k++) {
                     if (k != nextProcess && ProcessInfoArray[k].remaining_time > 0){
+                        // count waiting time for waiting process
                         totalWaiting++;
                     }
                 }
@@ -141,8 +141,6 @@ int main() {
                 break;
             case 4: // Meet Period
                 // Update remaining time
-                // printf("UPDATE REMAINING TIME"); FIXME: DELETE LATER
-
                 if (nextProcess != -1){
                     if (i % ProcessInfoArray[nextProcess].period == 0 && ProcessInfoArray[nextProcess].remaining_time == 0){
                         // the process finished but not end
@@ -154,17 +152,9 @@ int main() {
 
                 for(int j = 0; j < NumOfProcesses; j++){
                     if (i % ProcessInfoArray[j].period == 0){
-//                        printf("--  time(%d) add for process %d\n",ProcessInfoArray[j].burst_time, j+1); // FIXME: DELETE
-                        ProcessInfoArray[j].remaining_time += ProcessInfoArray[j].burst_time;
+                        ProcessInfoArray[j].remaining_time += ProcessInfoArray[j].burst_time; // add burst time to every process that meet it's period
                     }
                 }
-//                for (int k = 0; k < NumOfProcesses; ++k) { // FIXME: DELETE LATER
-//                    printf("--  %d: P%d remaining Time: %d\n", i, k + 1,
-//                           ProcessInfoArray[k].remaining_time);
-//                    printf("       \\DDL: %d\n", ProcessInfoArray[k].period -
-//                                                 i %
-//                                                 ProcessInfoArray[k].period);
-//                }
                 if (nextProcess != -1){
                     int urgentProcess = nextProcess;
                     for (int j = 0; j < NumOfProcesses; j++) {
@@ -181,6 +171,7 @@ int main() {
 
 
                     int maxRemainingTimeProcess = -1;
+                    // When the current process have another process that have the same deadline but different remaining_time
                     for (int j = 0; j < nextProcess; j++) {
                         if(ProcessInfoArray[nextProcess].remaining_time < ProcessInfoArray[j].remaining_time){
                             if (ProcessInfoArray[j].period -
@@ -190,6 +181,8 @@ int main() {
                             maxRemainingTimeProcess = j;
                         }
                     }
+
+                    // if one of the pro
 
                     int minRemainingTimeProcess = -1;
                     if (maxRemainingTimeProcess == -1 && urgentProcess == nextProcess){
@@ -227,7 +220,6 @@ int main() {
                 printf("%d: process %d missed deadline (%d ms left)\n", i, nextProcess+1, ProcessInfoArray[nextProcess].remaining_time);
                 for(int j = 0; j < NumOfProcesses; j++){
                     if (i % ProcessInfoArray[j].period == 0){
-//                        printf("--  time(%d) add for process %d\n",ProcessInfoArray[j].burst_time, j+1); // FIXME: DELETE
                         ProcessInfoArray[j].remaining_time += ProcessInfoArray[j].burst_time;
                     }
                 }
@@ -251,7 +243,7 @@ int main() {
                         printf("%d: process %d starts\n", i, nextProcess+1); // Print the start message
                     }
                 }
-                break;
+                break; // End of case 5
         }
     }
     printf("%d: MaxTime reached\n", MaxTime);
