@@ -26,6 +26,8 @@ int main() {
     printf("Enter the number of processes to schedule: ");
     scanf("%d", &NumOfProcesses);
 
+    float cpuBurst = 0, totalWaiting=0;
+
     // Create a pcb array using dynamic memory allocation
     pcb *ProcessInfoArray = (pcb *) malloc(sizeof(pcb) * NumOfProcesses);
 
@@ -42,12 +44,13 @@ int main() {
     MaxTime = lcm(ProcessInfoArray, NumOfProcesses);
     int nextProcess = -1;
     for (int i = 0; i < MaxTime;) {
+
         /*
          * Operate list:
          * 0 - CPU Idle
          * 1 - Process Choosing
          * 2 - Process Running
-         * 3 - Process Finish ?
+         * 3 - Process Finish
          * 4 - New Period
          * 5 - Overdue
          */
@@ -126,8 +129,10 @@ int main() {
                 // printf("%d: Process%d running\n", i, nextProcess+1); // Print Runing status, FIXME: DELETE LATER
                 i++;
                 ProcessInfoArray[nextProcess].remaining_time -= 1;
-                if(ProcessInfoArray[nextProcess].remaining_time == 0){
-                    // TODO
+                for (int k = 0; k < NumOfProcesses; k++) {
+                    if (k != nextProcess && ProcessInfoArray[k].remaining_time > 0){
+                        totalWaiting++;
+                    }
                 }
                 break;
             case 3:
@@ -250,7 +255,14 @@ int main() {
         }
     }
     printf("%d: MaxTime reached\n", MaxTime);
+    for (int m = 0; m < NumOfProcesses; m++) {
+        cpuBurst += MaxTime / ProcessInfoArray[m].period; // CPU burst time equal to the sum of all process's period divided by burst time
+    }
     free(ProcessInfoArray); // Release the memory
+    printf("Sum of all waiting times: %.0f\n", totalWaiting);
+    printf("Number of CPU bursts: %.0f\n", cpuBurst);
+    float averageWaitingTime = totalWaiting / cpuBurst;
+    printf("Average Waiting Time: %f\n", averageWaitingTime);
     return 0;
 }
 
