@@ -182,7 +182,8 @@ int main() {
                         }
                     }
 
-                    // if one of the pro
+                    // if one of the process which are going to runing in the next status is overdue
+                    // we need to switch to another process if needed
 
                     int minRemainingTimeProcess = -1;
                     if (maxRemainingTimeProcess == -1 && urgentProcess == nextProcess){
@@ -209,6 +210,8 @@ int main() {
                         urgentProcess = minRemainingTimeProcess;
                     }
 
+                    // Do the preempt and start the next process
+
                     if (urgentProcess != nextProcess && ProcessInfoArray[urgentProcess].remaining_time != 0){
                         printf("%d: process %d preempted!\n", i, nextProcess+1);  // Preempted Message
                         nextProcess = urgentProcess;
@@ -217,6 +220,7 @@ int main() {
                 }
                 break; // End of case 4
             case 5:
+                // When coming to this case, the time is equal to some process's period
                 printf("%d: process %d missed deadline (%d ms left)\n", i, nextProcess+1, ProcessInfoArray[nextProcess].remaining_time);
                 for(int j = 0; j < NumOfProcesses; j++){
                     if (i % ProcessInfoArray[j].period == 0){
@@ -224,6 +228,7 @@ int main() {
                     }
                 }
 
+                // Choice a another process to run
                 if (nextProcess != -1){
                     int urgentProcess = nextProcess;
                     for (int j = 0; j < NumOfProcesses; j++) {
@@ -237,6 +242,7 @@ int main() {
                             }
                         }
                     }
+                    // Switch Process
                     if (urgentProcess != nextProcess && ProcessInfoArray[urgentProcess].remaining_time != 0){
                         printf("%d: process %d preempted!\n", i, nextProcess+1);  // Preempted Message
                         nextProcess = urgentProcess;
@@ -248,12 +254,13 @@ int main() {
     }
     printf("%d: MaxTime reached\n", MaxTime);
     for (int m = 0; m < NumOfProcesses; m++) {
-        cpuBurst += MaxTime / ProcessInfoArray[m].period; // CPU burst time equal to the sum of all process's period divided by burst time
+        cpuBurst += MaxTime / ProcessInfoArray[m].period;
+        // CPU burst time equal to the sum of all process's period divided by burst time
     }
     free(ProcessInfoArray); // Release the memory
     printf("Sum of all waiting times: %.0f\n", totalWaiting);
     printf("Number of CPU bursts: %.0f\n", cpuBurst);
-    float averageWaitingTime = totalWaiting / cpuBurst;
+    float averageWaitingTime = totalWaiting / cpuBurst; // Calculate the average waiting time
     printf("Average Waiting Time: %f\n", averageWaitingTime);
     return 0;
 }
