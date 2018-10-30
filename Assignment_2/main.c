@@ -7,9 +7,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Structure declaration
+typedef struct {
+    int burst_time;
+    int period;
+    int remaining_time;
+} pcb;
+
 // Function declaration
 int gcd(int a, int b);
-int lcm(int a[], int num);
+
+int lcm(pcb a[], int num);
 
 int main() {
 
@@ -18,80 +26,143 @@ int main() {
     printf("Enter the number of processes to schedule: ");
     scanf("%d", &NumOfProcesses);
 
-    // Create two arrays using dynamic memory allocation
-    int *ProcessBurstTimeArray = (int *) malloc(sizeof(int) * NumOfProcesses);
-    int *ProcessPeriodTimeArray = (int *) malloc(sizeof(int) * NumOfProcesses);
-    // Array use to store how many time the process run
-    int *ProcessRunCounter = (int *) malloc(sizeof(int) * NumOfProcesses);
+    // Create a pcb array using dynamic memory allocation
+    pcb *ProcessInfoArray = (pcb *) malloc(sizeof(pcb) * NumOfProcesses);
 
     // Ask user to input the burst time and period for each process
     for (int i = 0; i < NumOfProcesses; i++) {
         printf("Enter the burst time of process %d: ", i + 1);
-        scanf("%d", &ProcessBurstTimeArray[i]);
+        scanf("%d", &ProcessInfoArray[i].burst_time);
         printf("Enter the period of process %d: ", i + 1);
-        scanf("%d", &ProcessPeriodTimeArray[i]);
-        ProcessRunCounter[i] = 0;
+        scanf("%d", &ProcessInfoArray[i].period);
+        ProcessInfoArray[i].remaining_time = 0;
     }
 
     // MaxTime is the Least Common Multiple of all the periods
-    MaxTime = lcm(ProcessPeriodTimeArray, NumOfProcesses);
+    MaxTime = lcm(ProcessInfoArray, NumOfProcesses);
+    int nextProcess = -1;
+    for (int i = 0; i < MaxTime;) {
+        /*
+         * Operate list:
+         * 0 - CPU Idle
+         * 1 - Process Choosing
+         * 2 - Process Running
+         * 3 - Process Finish ?
+         * 4 - New Period
+         * 5 - Process Preempt
+         * 6 - MISSED DEADLINE TODO
+         */
+        int operate = 0;
+        for (int k = 0; k < NumOfProcesses ; ++k) {
+            if (ProcessInfoArray[k].remaining_time == 0 && i % ProcessInfoArray[k].period == 0){
+                operate = 4;
+                break;
+            }
+        }
+        if (operate != 4){
+            if(nextProcess == -1){ // Pick next process
+                operate = 1;
+            } else if (ProcessInfoArray[nextProcess].remaining_time > 0){ // Running the Process
+                operate = 2;
+            } else if (ProcessInfoArray[nextProcess].remaining_time == 0){ // Finish a Process
+                operate = 3;
+            }
 
-    int currentTime = 0;
-    int needToPreempt = 0, PreemptingProcess = -1, PreemptedProcess = -1, PreemptedProcessRestTime = 0;
-
-    while (currentTime < MaxTime){
-        int nextProcess = 0;
-        for (int i = 0; i < NumOfProcesses; i++){
-            if (i != nextProcess){
-                if (ProcessPeriodTimeArray[i] * (ProcessRunCounter[i]+1) - currentTime <
-                    ProcessPeriodTimeArray[nextProcess] * (ProcessRunCounter[nextProcess]+1) - currentTime){
-                    nextProcess = i;
+            int FinishedInPeriod = 0; // Number Of the Process finished within the period
+            for(int j = 0; j < NumOfProcesses; j++){
+                if (ProcessInfoArray[j].remaining_time == 0){
+                    FinishedInPeriod++;
                 }
             }
-        }
-        if (nextProcess == PreemptedProcess){
-            if (PreemptedProcessRestTime + currentTime < ProcessPeriodTimeArray[PreemptedProcess] * (ProcessRunCounter[PreemptedProcess] + 1)){
-                nextProcess = PreemptedProcess;
-                printf("%d: process %d starts\n", currentTime, nextProcess+1);
-                currentTime += PreemptedProcessRestTime;
-                PreemptedProcessRestTime = 0;
-                ProcessRunCounter[nextProcess]++;
-                printf("%d: process %d end\n", currentTime, nextProcess+1);
-                PreemptedProcess = -1;
-                continue;
+            if (FinishedInPeriod == NumOfProcesses) {
+                operate = 0;
+                // IF nextProcess == -1; all remaining time == 0 TODO: is nextProcess == -1 necessary?
             }
-        }
-        printf("%d: process %d starts\n", currentTime, nextProcess+1);
 
-        for (int i = 0; i < NumOfProcesses; i++){
-            if (i != nextProcess){
-                if (currentTime + ProcessBurstTimeArray[nextProcess] > ProcessPeriodTimeArray[i] * (ProcessRunCounter[i] + 1)){
-                    needToPreempt = 1;
-                    PreemptingProcess = i;
-                    break;
-                }
+
+            if (0) { // TODO: Preempt
+                operate = 5;
+                // FIXME: DELETE?
+            }
+
+            if (0) { // TODO: MISSED DEADLINE
+                operate = 6;
+                // TODO: CHECK WHEN 4?
             }
         }
-        if (needToPreempt == 1){
-            PreemptedProcess = nextProcess;
-            PreemptedProcessRestTime = ProcessPeriodTimeArray[PreemptingProcess] * (ProcessRunCounter[PreemptingProcess] + 1) - currentTime;
-            currentTime += ProcessPeriodTimeArray[PreemptingProcess] * (ProcessRunCounter[PreemptingProcess] + 1) - PreemptedProcessRestTime;
-            printf("%d: process %d preempted!\n", currentTime, PreemptedProcess);
-            needToPreempt = 0;
-            nextProcess = PreemptingProcess;
-            PreemptingProcess = -1;
-            printf("%d: process %d starts\n", currentTime, nextProcess+1);
+
+        switch (operate) {
+            case 0:
+                i++; // CPU IDLE
+                break;
+            case 1:
+                nextProcess = 0; // Pick One
+                for (int j = 0; j < NumOfProcesses; j++) {
+                    /*printf("process %d deadline remaining time: %d\n", j + 1,
+                           ProcessInfoArray[j].period - i % ProcessInfoArray[j].period);*/
+
+                    // Pick the next running process
+                    if (ProcessInfoArray[j].remaining_time > 0) {
+                        if (ProcessInfoArray[j].period -
+                            i % ProcessInfoArray[j].period -
+                            ProcessInfoArray[j].remaining_time <
+                            ProcessInfoArray[nextProcess].period -
+                            i % ProcessInfoArray[nextProcess].period -
+                            ProcessInfoArray[nextProcess].remaining_time) {
+                            nextProcess = j;
+                        }
+                    }
+                }
+                printf("%d: process %d starts\n", i, nextProcess+1); // Print the start message
+                break;
+            case 2:
+                printf("%d: Process%d running\n", i, nextProcess); // Print Runing status, TODO: DELETE LATER
+                i++;
+                ProcessInfoArray[nextProcess].remaining_time -= 1;
+                break;
+            case 3:
+                printf("%d: process %d end\n", i, nextProcess+1); // Print the end message
+                nextProcess = -1; // Reset the next process
+                break;
+            case 4: // Meet Period
+                // Update remaining time
+                printf("UPDATE REMAINING TIME");
+                for(int j = 0; j < NumOfProcesses; j++){
+                    if (i % ProcessInfoArray[j].period == 0){
+                        ProcessInfoArray[j].remaining_time += ProcessInfoArray[j].burst_time;
+                    }
+                }
+                for (int k = 0; k < NumOfProcesses; ++k) {
+                    printf("P%d remaining Time: %d\n", k+1, ProcessInfoArray[k].remaining_time);
+                }
+                if (0){
+                    // TODO: CHECK IF PREEMPT IS NEEDED
+                    // DO THE EARLIEST DEADLINE CHECK
+                    for (int j = 0; j < NumOfProcesses; j++) {
+                        // Pick the next running process
+                        if (ProcessInfoArray[j].remaining_time > 0) {
+                            if (ProcessInfoArray[j].period -
+                                i % ProcessInfoArray[j].period -
+                                ProcessInfoArray[j].remaining_time <
+                                ProcessInfoArray[nextProcess].period -
+                                i % ProcessInfoArray[nextProcess].period -
+                                ProcessInfoArray[nextProcess].remaining_time) {
+                                nextProcess = j;
+                                printf("PREEMPT: %d\n", nextProcess);  // FIXME: FOR DEBUG
+                            }
+                        }
+                    }
+                }
+                break;
+            case 5:
+                // TODO: DELETE?
+                break;
+            case 6: // MISSED DEADLINE
+                // IF WHEN MOD == 0; REMAIN > 0;
+                break;
         }
-        currentTime += ProcessBurstTimeArray[nextProcess];
-        ProcessRunCounter[nextProcess]++;
-        printf("%d: process %d end\n", currentTime, nextProcess+1);
     }
-    printf("%d: MaxTime reached", currentTime);
-
-    free(ProcessBurstTimeArray);
-    free(ProcessPeriodTimeArray);
-    free(ProcessRunCounter);
-
+    printf("%d: MaxTime reached\n", MaxTime);
     return 0;
 }
 
@@ -99,12 +170,12 @@ int main() {
 int gcd(int a, int b) {
     return b ? gcd(b, a % b) : a;
 }
+
 // Least Common Multiple
-int lcm(int a[], int num) {
+int lcm(pcb a[], int num) {
     int result = 1;
     for (int i = 0; i < num; i++) {
-        result *= a[i] / gcd(result, a[i]);
+        result *= a[i].period / gcd(result, a[i].period);
     }
     return result;
 }
-
