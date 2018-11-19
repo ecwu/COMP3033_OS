@@ -25,8 +25,8 @@ void *runner(void *param) {
         while (door_status != N) { // Wait for open door
             // The door is open only when all the thread have a flag less than 3
             door_status = 0; // Door, N: open, less than N: close
-            for(int j = 0; j < N; j++){
-                if (flag[j] < 3){
+            for (int j = 0; j < N; j++) {
+                if (flag[j] < 3) {
                     door_status++;
                 }
             }
@@ -37,10 +37,10 @@ void *runner(void *param) {
 
         // Check whether Pj wants to enter the waiting room too:
         int wait_enter = 0;
-        while (wait_enter == 0){
+        while (wait_enter == 0) {
             int want_enter = 0; // indicate whether there is an thread want to enter
             for (int j = 0; j < N; j++) {
-                if (flag[j] == 1){ // There is a thread want to enter
+                if (flag[j] == 1) { // There is a thread want to enter
                     flag[i] = 2; // Pi waiting for the other threads to enter
                     want_enter = 1;
                     break;
@@ -50,7 +50,8 @@ void *runner(void *param) {
                 int entered = 0; // indicate the thread entered the waiting room or not
                 while (entered == 0) { // wait for threads that want to enter
                     for (int j = 0; j < N; j++) {
-                        if (flag[j] == 4) { // one of the thread is ready to enter the critical section
+                        if (flag[j] ==
+                            4) { // one of the thread is ready to enter the critical section
                             entered = 1; // the thread is entered the critical section
                             break;
                         }
@@ -68,10 +69,10 @@ void *runner(void *param) {
          * that already entered the critical section (flag is 0 or 1)
          * The Pi will keep waiting until all Pj(j >= 0 && j < i)
          * is finished running*/
-        while (smaller_status != i){
+        while (smaller_status != i) {
             smaller_status = 0;
             for (int j = 0; j < i; j++) { // for all thread pid smaller than i
-                if (flag[j] < 2){ // if the thread is finished running
+                if (flag[j] < 2) { // if the thread is finished running
                     smaller_status++;
                 }
             }
@@ -92,7 +93,7 @@ void *runner(void *param) {
         nanosleep(&delay, NULL);
         sum = s;
         // The Critical Section ends right above.
-        
+
 
         /*
          * Pi have to wait for Pj(j > i) which already inside the waiting room
@@ -100,10 +101,12 @@ void *runner(void *param) {
          * (flag[j] == 4 or flag < 2)
          */
         int wait_open = 0;
-        while (wait_open != N - i - 1){
+        while (wait_open != N - i - 1) {
             wait_open = 0;
-            for (int j = i + 1; j < N; j++) { // for all thread j pid larger than i
-                if (flag[j] < 2 || flag[j] == 4){ // if pj is ready to enter critical section or not in the room
+            for (int j = i + 1;
+                 j < N; j++) { // for all thread j pid larger than i
+                if (flag[j] < 2 || flag[j] ==
+                                   4) { // if pj is ready to enter critical section or not in the room
                     wait_open++;
                 }
             }
