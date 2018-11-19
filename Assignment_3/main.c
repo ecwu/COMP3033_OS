@@ -25,12 +25,10 @@ void *runner(void *param) {
         }
         // Pi goes through the entrance door:
         flag[i] = 3;
-        int wait_status = 0;
         for (int j = 0; j < N; j++) {
             if (flag[j] == 1) {
                 flag[i] = 2;
-                wait_status = j;
-                while (flag[wait_status] != 4);
+                while (flag[j] != 4);
                 // then Pi starts waiting inside the waiting room:
             }
         }
@@ -42,7 +40,6 @@ void *runner(void *param) {
 //        }
 
         flag[i] = 4;
-
 
 //        if (i - 1 >= 0 ? 1 : 0) {
 //            while (flag[i - 1] >= 2) // Atomic test.
