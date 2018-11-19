@@ -14,6 +14,7 @@ void *runner(void *param) {
     int m;
     for (m = 0; m < M; m++) {
         flag[i] = 1;
+
         int door_status = 0;
         while (door_status != N) { // Atomic test.
             door_status = 0; // door
@@ -23,28 +24,35 @@ void *runner(void *param) {
                 }
             }
         }
+
         // Pi goes through the entrance door:
         flag[i] = 3;
-        for (int j = 0; j < N; j++) {
-            if (flag[j] == 1) {
-                flag[i] = 2;
-                while (flag[j] != 4);
-                // then Pi starts waiting inside the waiting room:
+
+        int wait_enter = 0;
+        while (wait_enter == 0){
+            int want_enter = 0;
+            for (int j = 0; j < N; j++) {
+                if (flag[j] == 1){
+                    flag[i] = 2;
+                    want_enter = 1;
+                    break;
+                }
             }
+            if (want_enter == 1){
+                want_enter = 0;
+                while (want_enter == 0){
+                    for (int j = 0; j < N; j++) {
+                        if (flag[j] == 4){
+                            want_enter = 1;
+                            break;
+                        }
+                    }
+                }
+            }
+            wait_enter = 1;
         }
-//        if (wait_status != 0){
-//            flag[i] = 2;
-//            // until Pj comes inside the waiting room too and the entrance
-//            // door closes (then flag[j] becomes 4 and Pi then stops waiting):
-//            while (flag[wait_status] != 4);
-//        }
 
         flag[i] = 4;
-
-//        if (i - 1 >= 0 ? 1 : 0) {
-//            while (flag[i - 1] >= 2) // Atomic test.
-//                ;
-//        }
 
         int smaller_status = 0;
         while (smaller_status != i){
@@ -89,6 +97,7 @@ void *runner(void *param) {
 
         flag[i] = 0;
         printf("%c", 'A' + i); // Print this thread’s ID number as a letter.
+
         fflush(stdout);
     }
     return 0; // Thread dies.
