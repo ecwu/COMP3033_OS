@@ -1,1 +1,3 @@
-# COMP3033_OS
+# COMP3033 OS
+
+Operating System
